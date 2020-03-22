@@ -6,18 +6,25 @@
 #
 
 import setuptools
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 import sys
 
-import pybind11
+
+class PyBind11Helper(object):
+    def __init__(self, user: bool = False):
+        self.user = user
+
+    def get_include(self):
+        import pybind11
+        return pybind11.get_include(self.user)
 
 
 ext_modules = [
     Extension(
         'fastwer',
         ['src/fastwer.cpp', 'src/bindings.cpp'],
-        include_dirs=[pybind11.get_include(), pybind11.get_include(user=True)],
+        include_dirs=[PyBind11Helper().get_include(), PyBind11Helper(user=True).get_include()],
         language='c++',
     ),
 ]
@@ -99,7 +106,9 @@ with open('VERSION') as f:
 setup(
     name='fastwer',
     version=version,
-    description='fastWER: a fast implementation of Word Error Rate',
+    author='Changhan Wang',
+    author_email='wangchanghan@gmail.com',
+    description='A PyPI package for fast word/character error rate (WER/CER) calculation',
     url='https://github.com/kahne/fastwer',
     classifiers=[
         'Intended Audience :: Science/Research',
@@ -115,8 +124,9 @@ setup(
     setup_requires=['setuptools>=18.0'],
     install_requires=['pybind11'],
     ext_modules=ext_modules,
-    packages=find_packages(exclude=['tests']),
-    package_data={'fastwer': ['VERSION']},
+    packages=['fastwer'],
+    package_dir={'fastwer': 'src'},
+    # data_files=[('', ['VERSION', 'LICENSE'])],
     cmdclass={'build_ext': BuildExt},
     zip_safe=False,
 )

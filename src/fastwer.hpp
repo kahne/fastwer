@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <cassert>
 
 #define WHITESPACE ' '
 

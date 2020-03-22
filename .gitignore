@@ -5,3 +5,6 @@ var
 *.so
 *.egg-info
 __pycache__
+dist
+*.sh
+CMakeLists.txt
