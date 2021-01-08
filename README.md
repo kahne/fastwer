@@ -8,7 +8,7 @@ A PyPI package for fast word/character error rate (WER/CER) calculation
 
 # Installation
 ```bash
-pip install fastwer
+pip install pybind11 fastwer
 ```
 
 # Example
