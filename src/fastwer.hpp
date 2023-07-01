@@ -1,6 +1,7 @@
 #ifndef FASTWER_FASTWER_HPP
 #define FASTWER_FASTWER_HPP
 
+#include <cstdint>
 #include <vector>
 #include <string>
 #include <sstream>
