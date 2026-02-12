@@ -24,18 +24,23 @@ std::pair<uint32_t, uint32_t> fastwer::compute(std::string &hypo, std::string &r
     fastwer::tokenize(hypo, hypo_tokens, char_level);
     fastwer::tokenize(ref, ref_tokens, char_level);
 
-    uint32_t m = hypo_tokens.size() + 1, n = ref_tokens.size() + 1;
-    std::vector<uint32_t> f(m * n);
-    for (size_t i = 0; i < m; i++) { f[i * n] = i; }
-    for (size_t j = 0; j < n; j++) { f[0 * n + j] = j; }
-    for (size_t i = 1; i < m; i++) {
-        for (size_t j = 1; j < n; j++) {
-            f[i * n + j] = std::min(f[(i - 1) * n + j] + 1, f[i * n + (j - 1)] + 1);
-            uint32_t matching_case = f[(i - 1) * n + (j - 1)] + (hypo_tokens[i - 1] == ref_tokens[j - 1] ? 0 : 1);
-            f[i * n + j] = std::min(f[i * n + j], matching_case);
+    // Use the shorter sequence as columns for O(min(m,n)) space
+    const auto &row_tok = (hypo_tokens.size() >= ref_tokens.size()) ? hypo_tokens : ref_tokens;
+    const auto &col_tok = (hypo_tokens.size() >= ref_tokens.size()) ? ref_tokens : hypo_tokens;
+    uint32_t rows = row_tok.size() + 1, cols = col_tok.size() + 1;
+
+    std::vector<uint32_t> prev(cols), curr(cols);
+    for (uint32_t j = 0; j < cols; j++) { prev[j] = j; }
+    for (uint32_t i = 1; i < rows; i++) {
+        curr[0] = i;
+        for (uint32_t j = 1; j < cols; j++) {
+            curr[j] = std::min(prev[j] + 1, curr[j - 1] + 1);
+            uint32_t match = prev[j - 1] + (row_tok[i - 1] == col_tok[j - 1] ? 0 : 1);
+            curr[j] = std::min(curr[j], match);
         }
+        std::swap(prev, curr);
     }
-    return std::make_pair(f[m * n - 1], ref_tokens.size());
+    return std::make_pair(prev[cols - 1], ref_tokens.size());
 }
 
 double fastwer::score_sent(std::string &hypo, std::string &ref, bool char_level) {
