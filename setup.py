@@ -9,22 +9,14 @@ import setuptools
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 import sys
-
-
-class PyBind11Helper(object):
-    def __init__(self, user: bool = False):
-        self.user = user
-
-    def get_include(self):
-        import pybind11
-        return pybind11.get_include(self.user)
+import pybind11
 
 
 ext_modules = [
     Extension(
         'fastwer',
         ['src/fastwer.cpp', 'src/bindings.cpp'],
-        include_dirs=[PyBind11Helper().get_include(), PyBind11Helper(user=True).get_include()],
+        include_dirs=[pybind11.get_include()],
         language='c++',
     ),
 ]
@@ -91,17 +83,14 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
-if sys.version_info < (3, 6):
-    sys.exit('Sorry, Python >= 3.6 is required.')
+if sys.version_info < (3, 8):
+    sys.exit('Sorry, Python >= 3.8 is required.')
 
 with open('README.md') as f:
     readme = f.read()
 
-with open('LICENSE') as f:
-    license_content = f.read()
-
 with open('VERSION') as f:
-    version = f.read()
+    version = f.read().strip()
 
 setup(
     name='fastwer',
@@ -112,20 +101,20 @@ setup(
     url='https://github.com/kahne/fastwer',
     classifiers=[
         'Intended Audience :: Science/Research',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
+    python_requires='>=3.8',
     long_description=readme,
     long_description_content_type='text/markdown',
     license='MIT',
-    setup_requires=['setuptools>=18.0', 'pybind11'],
     ext_modules=ext_modules,
-    packages=['fastwer'],
-    package_dir={'fastwer': 'src'},
-    # data_files=[('', ['VERSION', 'LICENSE'])],
     cmdclass={'build_ext': BuildExt},
     zip_safe=False,
 )
