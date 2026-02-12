@@ -44,7 +44,7 @@ double fastwer::score_sent(string &hypo, string &ref, bool char_level) {
 double fastwer::score(vector<string> &hypo, vector<string> &ref, bool char_level) {
     size_t n_examples = hypo.size();
     assert(n_examples == ref.size());
-    vector<pair<uint32_t, uint32_t>> stats(n_examples);
+    vector<pair<uint32_t, uint32_t>> stats;
     double total_edits = 0.0, total_lengths = 0.0;
     for (size_t i = 0; i < n_examples; i++) {
         stats.push_back(fastwer::compute(hypo[i], ref[i], char_level));
