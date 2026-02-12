@@ -12,7 +12,9 @@ void fastwer::tokenize(const string &str, vector<string> &tokens, bool char_leve
 }
 
 double fastwer::round_to_digits(double d, uint8_t digits) {
-    assert(digits < 7);
+    if (digits >= 7) {
+        throw std::invalid_argument("digits must be less than 7");
+    }
     static double pow10[7] = {1, 10, 100, 1000, 10000, 100000, 1000000};
     return round(d * pow10[digits]) / pow10[digits];
 }
@@ -38,18 +40,25 @@ pair <uint32_t, uint32_t> fastwer::compute(string &hypo, string &ref, bool char_
 
 double fastwer::score_sent(string &hypo, string &ref, bool char_level) {
     pair<uint32_t, uint32_t> stats = fastwer::compute(hypo, ref, char_level);
+    if (stats.second == 0) {
+        throw std::invalid_argument("reference must not be empty");
+    }
     return fastwer::round_to_digits(100 * double(stats.first) / stats.second, 4);
 }
 
 double fastwer::score(vector<string> &hypo, vector<string> &ref, bool char_level) {
     size_t n_examples = hypo.size();
-    assert(n_examples == ref.size());
-    vector<pair<uint32_t, uint32_t>> stats;
+    if (n_examples != ref.size()) {
+        throw std::invalid_argument("hypo and ref must have the same number of sentences");
+    }
     double total_edits = 0.0, total_lengths = 0.0;
     for (size_t i = 0; i < n_examples; i++) {
-        stats.push_back(fastwer::compute(hypo[i], ref[i], char_level));
-        total_edits += stats.back().first;
-        total_lengths += stats.back().second;
+        pair<uint32_t, uint32_t> s = fastwer::compute(hypo[i], ref[i], char_level);
+        total_edits += s.first;
+        total_lengths += s.second;
+    }
+    if (total_lengths == 0.0) {
+        throw std::invalid_argument("references must not all be empty");
     }
     return fastwer::round_to_digits(100 * total_edits / total_lengths, 4);
 }
