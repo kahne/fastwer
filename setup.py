@@ -114,5 +114,6 @@ setup(
     license='MIT',
     ext_modules=ext_modules,
     cmdclass={'build_ext': BuildExt},
+    data_files=[('', ['fastwer.pyi'])],
     zip_safe=False,
 )

@@ -1,3 +1,4 @@
 include VERSION
 include LICENSE
+include fastwer.pyi
 recursive-include src *.cpp *.hpp
