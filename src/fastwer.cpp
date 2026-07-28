@@ -46,6 +46,14 @@ size_t utf8_code_point_length(const std::string &str, size_t offset) {
 
 void fastwer::tokenize(const std::string &str, std::vector<std::string> &tokens, bool char_level, char delim) {
     if (char_level) {
+        // Validate and count in one pass so that malformed input is rejected
+        // before any token is appended, and the exact size can be reserved.
+        size_t n_code_points = 0;
+        for (size_t offset = 0; offset < str.size();) {
+            offset += utf8_code_point_length(str, offset);
+            n_code_points++;
+        }
+        tokens.reserve(tokens.size() + n_code_points);
         for (size_t offset = 0; offset < str.size();) {
             const size_t length = utf8_code_point_length(str, offset);
             tokens.push_back(str.substr(offset, length));
