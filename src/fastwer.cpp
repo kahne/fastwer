@@ -1,12 +1,59 @@
 #include "fastwer.hpp"
 
 
-void fastwer::tokenize(const std::string &str, std::vector<std::string> &tokens, bool char_level, char delim) {
-    std::stringstream ss(str);
-    std::string token;
-    if (char_level) {
-        for (char c : str) { tokens.push_back(std::string(1, c)); }
+namespace {
+
+size_t utf8_code_point_length(const std::string &str, size_t offset) {
+    const auto lead = static_cast<unsigned char>(str[offset]);
+    size_t length;
+
+    if (lead <= 0x7f) {
+        length = 1;
+    } else if (lead >= 0xc2 && lead <= 0xdf) {
+        length = 2;
+    } else if (lead >= 0xe0 && lead <= 0xef) {
+        length = 3;
+    } else if (lead >= 0xf0 && lead <= 0xf4) {
+        length = 4;
     } else {
+        throw std::invalid_argument("input contains invalid UTF-8");
+    }
+
+    if (offset + length > str.size()) {
+        throw std::invalid_argument("input contains truncated UTF-8");
+    }
+    for (size_t i = 1; i < length; ++i) {
+        const auto byte = static_cast<unsigned char>(str[offset + i]);
+        if ((byte & 0xc0) != 0x80) {
+            throw std::invalid_argument("input contains invalid UTF-8");
+        }
+    }
+
+    // Reject overlong encodings, UTF-16 surrogate code points, and values
+    // beyond the Unicode range.
+    if ((lead == 0xe0 && static_cast<unsigned char>(str[offset + 1]) < 0xa0) ||
+        (lead == 0xed && static_cast<unsigned char>(str[offset + 1]) > 0x9f) ||
+        (lead == 0xf0 && static_cast<unsigned char>(str[offset + 1]) < 0x90) ||
+        (lead == 0xf4 && static_cast<unsigned char>(str[offset + 1]) > 0x8f)) {
+        throw std::invalid_argument("input contains invalid UTF-8");
+    }
+
+    return length;
+}
+
+}  // namespace
+
+
+void fastwer::tokenize(const std::string &str, std::vector<std::string> &tokens, bool char_level, char delim) {
+    if (char_level) {
+        for (size_t offset = 0; offset < str.size();) {
+            const size_t length = utf8_code_point_length(str, offset);
+            tokens.push_back(str.substr(offset, length));
+            offset += length;
+        }
+    } else {
+        std::stringstream ss(str);
+        std::string token;
         while (std::getline(ss, token, delim)) { tokens.push_back(token); }
     }
 }

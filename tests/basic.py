@@ -79,6 +79,28 @@ class FastWerTestCase(unittest.TestCase):
         self.assertLessEqual(elapsed, 2.0)
         print(f'{elapsed:.4f}s for CER')
 
+    def test_unicode_cer(self):
+        import fastwer
+
+        cases = [
+            ('é', 'e', 100.0),
+            ('你', '好', 100.0),
+            ('a😀', 'a😃', 50.0),
+            ('你好', '你', 100.0),
+            ('café', 'café', 0.0),
+        ]
+        for hypo, ref, expected in cases:
+            with self.subTest(hypo=hypo, ref=ref):
+                self.assertEqual(
+                    fastwer.score_sent(hypo, ref, char_level=True),
+                    expected,
+                )
+
+        self.assertEqual(
+            fastwer.score(['你', 'ab'], ['好', 'ac'], char_level=True),
+            66.6667,
+        )
+
     def test_wer_cer_with_sclite(self):
         def get_sclite_wer(h_path: str, r_path: str) -> Optional[float]:
             whitespace_normalizer, space = re.compile(r'\s+'), chr(32)
