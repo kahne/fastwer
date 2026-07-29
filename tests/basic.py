@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import tempfile
+import unicodedata
 import warnings
 import unittest
 from typing import Optional
@@ -78,6 +79,67 @@ class FastWerTestCase(unittest.TestCase):
         _, elapsed = self.get_score_and_time(self.hypo_path, self.ref_path, char_level=True)
         self.assertLessEqual(elapsed, 2.0)
         print(f'{elapsed:.4f}s for CER')
+
+    def test_unicode_cer(self):
+        import fastwer
+
+        # Canonically equivalent, but 4 and 5 code points respectively.
+        nfc = unicodedata.normalize('NFC', 'café')
+        nfd = unicodedata.normalize('NFD', 'café')
+        self.assertEqual((len(nfc), len(nfd)), (4, 5))
+
+        cases = [
+            ('é', 'e', 100.0),
+            ('你', '好', 100.0),
+            ('a😀', 'a😃', 50.0),
+            ('你好', '你', 100.0),
+            (nfc, nfc, 0.0),
+            # Normalization is the caller's responsibility, so the two forms
+            # do not compare as equal.
+            (nfd, nfc, 50.0),
+            (nfc, nfd, 40.0),
+        ]
+        for hypo, ref, expected in cases:
+            with self.subTest(hypo=hypo, ref=ref):
+                self.assertEqual(
+                    fastwer.score_sent(hypo, ref, char_level=True),
+                    expected,
+                )
+
+        self.assertEqual(
+            fastwer.score(['你', 'ab'], ['好', 'ac'], char_level=True),
+            66.6667,
+        )
+
+    def test_invalid_utf8(self):
+        import fastwer
+
+        # pybind11 converts str to UTF-8 before the C++ sees it, so malformed
+        # input can only arrive as bytes.
+        cases = [
+            b'\x80',              # continuation byte as lead
+            b'\xff',              # invalid lead byte
+            b'\xc3',              # truncated 2-byte sequence
+            b'\xe4\xbd',          # truncated 3-byte sequence
+            b'\xe4\x20\xa0',      # invalid continuation byte
+            b'\xc0\xaf',          # overlong encoding of '/'
+            b'\xe0\x80\xaf',      # overlong 3-byte encoding
+            b'\xf0\x80\x80\xaf',  # overlong 4-byte encoding
+            b'\xed\xa0\x80',      # UTF-16 surrogate code point
+            b'\xf4\x90\x80\x80',  # beyond U+10FFFF
+        ]
+        for bad in cases:
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    fastwer.score_sent(bad, 'a', char_level=True)
+                with self.assertRaises(ValueError):
+                    fastwer.score_sent('a', bad, char_level=True)
+
+        # Well-formed bytes are tokenized by code point, same as str.
+        self.assertEqual(
+            fastwer.score_sent('你好'.encode(), '你', char_level=True),
+            100.0,
+        )
 
     def test_wer_cer_with_sclite(self):
         def get_sclite_wer(h_path: str, r_path: str) -> Optional[float]:

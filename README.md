@@ -4,6 +4,7 @@ FastWER
 A PyPI package for fast word/character error rate (WER/CER) calculation
 * fast (cpp implementation)
 * sentence-level and corpus-level WER/CER scores
+* Unicode code point-based character error rates
 
 
 # Installation
@@ -28,6 +29,10 @@ fastwer.score_sent(hypo[0], ref[0])
 # Sentence-Level CER: 22.7273
 fastwer.score_sent(hypo[0], ref[0], char_level=True)
 ```
+
+Character-level scoring treats each Unicode code point as one character.
+Normalize text before scoring if canonically equivalent representations, such
+as composed and decomposed accented characters, should compare as equal.
 
 
 # Contact
