@@ -1,5 +1,7 @@
 #include "fastwer.hpp"
 
+#include <algorithm>
+
 
 namespace {
 
