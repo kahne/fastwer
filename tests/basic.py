@@ -35,7 +35,8 @@ class TruncatedDataFilePath(object):
                 return f'{sent}{self.SPACE}{utterance_id}\n'
             data = [process_line(s) for s in data]
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+                mode='w', encoding='utf-8', delete=False) as f:
             for r in data:
                 f.write(r)
             self.path = f.name
