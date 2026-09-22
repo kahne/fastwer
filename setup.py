@@ -8,6 +8,7 @@
 import setuptools
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
+import os
 import sys
 import pybind11
 
@@ -64,6 +65,14 @@ class BuildExt(build_ext):
         c_opts['unix'] += darwin_opts
         l_opts['unix'] += darwin_opts
 
+    def run(self):
+        super().run()
+        # This project exposes a top-level extension module rather than a
+        # package. Setuptools does not automatically place top-level .pyi
+        # files next to extension modules, so copy the stub into the wheel's
+        # import directory explicitly.
+        self.copy_file('fastwer.pyi', os.path.join(self.build_lib, 'fastwer.pyi'))
+
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
@@ -97,6 +106,10 @@ setup(
     author_email='wangchanghan@gmail.com',
     description='A PyPI package for fast word/character error rate (WER/CER) calculation',
     url='https://github.com/kahne/fastwer',
+    project_urls={
+        'Issues': 'https://github.com/kahne/fastwer/issues',
+        'Source': 'https://github.com/kahne/fastwer',
+    },
     classifiers=[
         'Intended Audience :: Science/Research',
         'Programming Language :: Python :: 3.8',
@@ -114,6 +127,5 @@ setup(
     license='MIT',
     ext_modules=ext_modules,
     cmdclass={'build_ext': BuildExt},
-    data_files=[('', ['fastwer.pyi'])],
     zip_safe=False,
 )
