@@ -1,6 +1,7 @@
 #include "fastwer.hpp"
 
 #include <algorithm>
+#include <sstream>
 
 
 namespace {
@@ -76,7 +77,7 @@ double fastwer::round_to_digits(double d, uint8_t digits) {
     return std::round(d * pow10[digits]) / pow10[digits];
 }
 
-std::pair<uint32_t, uint32_t> fastwer::compute(std::string &hypo, std::string &ref, bool char_level) {
+std::pair<uint32_t, uint32_t> fastwer::compute(const std::string &hypo, const std::string &ref, bool char_level) {
     std::vector<std::string> hypo_tokens, ref_tokens;
     fastwer::tokenize(hypo, hypo_tokens, char_level);
     fastwer::tokenize(ref, ref_tokens, char_level);
@@ -100,7 +101,7 @@ std::pair<uint32_t, uint32_t> fastwer::compute(std::string &hypo, std::string &r
     return std::make_pair(prev[cols - 1], ref_tokens.size());
 }
 
-double fastwer::score_sent(std::string &hypo, std::string &ref, bool char_level) {
+double fastwer::score_sent(const std::string &hypo, const std::string &ref, bool char_level) {
     std::pair<uint32_t, uint32_t> stats = fastwer::compute(hypo, ref, char_level);
     if (stats.second == 0) {
         throw std::invalid_argument("reference must not be empty");
@@ -108,7 +109,7 @@ double fastwer::score_sent(std::string &hypo, std::string &ref, bool char_level)
     return fastwer::round_to_digits(100 * double(stats.first) / stats.second, 4);
 }
 
-double fastwer::score(std::vector<std::string> &hypo, std::vector<std::string> &ref, bool char_level) {
+double fastwer::score(const std::vector<std::string> &hypo, const std::vector<std::string> &ref, bool char_level) {
     size_t n_examples = hypo.size();
     if (n_examples != ref.size()) {
         throw std::invalid_argument("hypo and ref must have the same number of sentences");

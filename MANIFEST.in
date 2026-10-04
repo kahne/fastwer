@@ -1,6 +1,6 @@
 include VERSION
 include LICENSE
 include CHANGELOG.md
-include RELEASING.md
 include fastwer.pyi
+include py.typed
 recursive-include src *.cpp *.hpp

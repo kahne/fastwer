@@ -15,7 +15,7 @@ jobs:
     name: Verify release version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -32,6 +32,8 @@ jobs:
 
   build-wheels:
     name: Build wheels on ${{ matrix.os }}
+    # Only build the full matrix on tags; PRs are validated via verify-version + test.yml
+    if: startsWith(github.ref, 'refs/tags/')
     needs: verify-version
     runs-on: ${{ matrix.os }}
     strategy:
@@ -45,7 +47,7 @@ jobs:
           - macos-14
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -63,11 +65,11 @@ jobs:
     needs: verify-version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
@@ -85,6 +87,8 @@ jobs:
   validate-artifacts:
     name: Validate distribution metadata
     needs: [build-wheels, build-sdist]
+    # validate-artifacts should run only when build-wheels ran (i.e. on tags)
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -92,7 +96,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 

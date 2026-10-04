@@ -1,5 +1,4 @@
 .idea
-cmake-build-debug
 build
 var
 *.so
@@ -7,4 +6,4 @@ var
 __pycache__
 dist
 *.sh
-CMakeLists.txt
+.venv/
