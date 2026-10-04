@@ -1,9 +1,5 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-#
+# MIT License
+# Copyright (c) 2020 Changhan Wang (wangchanghan@gmail.com)
 
 import setuptools
 from setuptools import setup, Extension
@@ -28,13 +24,22 @@ def has_flag(compiler, flagname):
     the specified compiler.
     """
     import tempfile
-    with tempfile.NamedTemporaryFile('w', suffix='.cpp') as f:
-        f.write('int main (int argc, char **argv) { return 0; }')
+    # NamedTemporaryFile is held open on Windows, so use delete=False
+    # and clean up manually to avoid file-lock errors.
+    tmp = tempfile.NamedTemporaryFile('w', suffix='.cpp', delete=False)
+    try:
+        tmp.write('int main (int argc, char **argv) { return 0; }')
+        tmp.close()
         try:
-            compiler.compile([f.name], extra_postargs=[flagname])
+            compiler.compile([tmp.name], extra_postargs=[flagname])
         except setuptools.errors.CompileError:
             return False
-    return True
+        return True
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
 
 
 def cpp_flag(compiler):
@@ -72,18 +77,25 @@ class BuildExt(build_ext):
         # files next to extension modules, so copy the stub into the wheel's
         # import directory explicitly.
         self.copy_file('fastwer.pyi', os.path.join(self.build_lib, 'fastwer.pyi'))
+        # PEP 561 marker for typed package
+        typed_src = 'py.typed'
+        if os.path.exists(typed_src):
+            self.copy_file(typed_src, os.path.join(self.build_lib, 'py.typed'))
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
         link_opts = self.l_opts.get(ct, [])
         if ct == 'unix':
-            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
+            opts.append('-DVERSION_INFO=%s' % self.distribution.get_version())
             opts.append(cpp_flag(self.compiler))
             if has_flag(self.compiler, '-fvisibility=hidden'):
                 opts.append('-fvisibility=hidden')
+            if has_flag(self.compiler, '-O3'):
+                opts.append('-O3')
         elif ct == 'msvc':
-            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
+            opts.append('/DVERSION_INFO=%s' % self.distribution.get_version())
+            opts.append('/O2')
         for ext in self.extensions:
             ext.extra_compile_args = opts
             ext.extra_link_args = link_opts
@@ -112,6 +124,7 @@ setup(
     },
     classifiers=[
         'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
@@ -119,8 +132,11 @@ setup(
         'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: C++',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Operating System :: OS Independent',
     ],
+    keywords='wer cer asr speech-recognition evaluation',
     python_requires='>=3.8',
     long_description=readme,
     long_description_content_type='text/markdown',
