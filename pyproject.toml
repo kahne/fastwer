@@ -3,8 +3,12 @@ requires = ["setuptools", "pybind11", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-build = "cp38-*"
+# Build CPython 3.8 through 3.13 (matches classifiers / python_requires).
+# Use an explicit list so the glob is not accidentally narrowed to a single
+# interpreter if edited again. Keep in sync with setup.py classifiers.
+build = "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*"
 archs = ["auto64"]
+skip = ["pp*", "*-musllinux*"]
 test-sources = ["tests"]
 test-command = "python -m unittest -v tests.basic"
 
