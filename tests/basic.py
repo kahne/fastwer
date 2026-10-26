@@ -173,6 +173,13 @@ class FastWerTestCase(unittest.TestCase):
         # Whitespace-only edge: single space tokenization yields same as empty? but should not crash
         self.assertIsInstance(fastwer.score_sent(' ', 'hello'), float)
 
+    def test_extra_spaces_are_not_words(self):
+        import fastwer
+
+        self.assertEqual(fastwer.score_sent('hello  world', 'hello world'), 0.0)
+        self.assertEqual(fastwer.score_sent(' hello world ', 'hello world'), 0.0)
+        self.assertEqual(fastwer.score(['a b'], ['a  b']), 0.0)
+
     def test_version_attribute(self):
         import fastwer
         self.assertTrue(hasattr(fastwer, '__version__'))

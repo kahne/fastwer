@@ -65,7 +65,10 @@ void fastwer::tokenize(const std::string &str, std::vector<std::string> &tokens,
     } else {
         std::stringstream ss(str);
         std::string token;
-        while (std::getline(ss, token, delim)) { tokens.push_back(token); }
+        while (std::getline(ss, token, delim)) {
+            // Repeated, leading or trailing delimiters are not words.
+            if (!token.empty()) { tokens.push_back(token); }
+        }
     }
 }
 
